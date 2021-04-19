@@ -20,7 +20,7 @@ class PromoCheckerAPIView(APIView):
                                            'detail': 'В запросе отсуствует обязательные параметры.'},
                                           status=status.HTTP_400_BAD_REQUEST)
 
-        result = services.get_promocode(promocode, PATH=settings.PATH_JSON_FILE)
+        result = services.get_promocode(promocode, path=settings.PATH_JSON_FILE)
         if not result: return Response({'result': 'код не существует'}, status.HTTP_204_NO_CONTENT)
 
         return Response({'result': f'Промокод \'{result["promocode"]}\' существует. группа = {result["group_name"]}'},
@@ -39,16 +39,18 @@ class PromoCheckerAPIView(APIView):
         group = request.data.get('group', None)
 
         if amount is None or (group is None or group == ''):
-            return Response({'error': 'Invalid required data .',
+            return Response({'error': 'Invalid required data.',
                              'detail': 'В запросе отсуствует обязательные параметры.'},
                             status=status.HTTP_400_BAD_REQUEST)
-        elif not isinstance(amount, int) or amount == 0:
-            return Response({'error': 'Invalid amount data .',
+        elif (not isinstance(amount, str) and not isinstance(amount, int)) \
+                or (isinstance(amount, str) and not amount.isdigit()) \
+                or int(amount) == 0:
+            return Response({'error': 'Invalid amount data.',
                              'detail': 'Значение amount должно быть числом и больше 0.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-        promocode = services.insert_new_promo(group_name=group, amount=amount, PATH=settings.PATH_JSON_FILE)
+        promocode = services.insert_new_promo(group_name=group, amount=amount, path=settings.PATH_JSON_FILE)
         if not promocode: return Response({'result': 'Не удалось сохранить код. Сбой на сервере.'},
                                           status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -58,7 +60,7 @@ class PromoCheckerAPIView(APIView):
 class PromoGeneratorAPIView(APIView):
     @swagger_auto_schema(description='Generate basa.json with promocodes')
     def post(self, request):
-        result = services.generate_base_file(PATH=settings.PATH_JSON_FILE)
+        result = services.generate_base_file(path=settings.PATH_JSON_FILE)
         if not result: return Response(status=status.HTTP_409_CONFLICT)
 
         return Response()
